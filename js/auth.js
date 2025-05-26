@@ -8,17 +8,19 @@ function isLoggedIn() {
 
 // Login user
 function login(email, password) {
-  // In a real app, this would validate against a backend
-  if (email && password) {
-    const user = {
-      email,
-      name: email.split('@')[0],
-      timestamp: new Date().toISOString()
-    };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-    return true;
+  // Simple validation
+  if (!email || !password) {
+    return false;
   }
-  return false;
+
+  // In a real app, this would validate against a backend
+  const user = {
+    email,
+    name: email.split('@')[0],
+    timestamp: new Date().toISOString()
+  };
+  localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+  return true;
 }
 
 // Register user
@@ -170,6 +172,7 @@ function handleLogin() {
     hideModal();
     showAlert('Connexion réussie !', 'success');
     updateAuthUI();
+    window.location.reload(); // Reload to update UI
   } else {
     errorElement.textContent = 'Email ou mot de passe incorrect';
     errorElement.style.display = 'block';
@@ -200,6 +203,7 @@ function handleRegister() {
     hideModal();
     showAlert('Inscription réussie !', 'success');
     updateAuthUI();
+    window.location.reload(); // Reload to update UI
   } else {
     errorElement.textContent = 'Une erreur est survenue';
     errorElement.style.display = 'block';
@@ -249,4 +253,191 @@ function updateAuthUI() {
     logoutButton?.classList.add('hidden');
     createEventButton?.classList.add('hidden');
   }
+}
+
+// Show create event modal
+function showCreateEventModal() {
+  if (!isLoggedIn()) {
+    showLoginModal();
+    return;
+  }
+
+  showModal(
+    'Créer un événement',
+    `
+    <div class="create-event-form">
+      <h3>Informations générales</h3>
+      <div class="form-group">
+        <label for="event-title">Titre de l'événement *</label>
+        <input type="text" id="event-title" class="form-control" placeholder="Nom de votre événement" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="event-description">Description *</label>
+        <textarea id="event-description" class="form-control" rows="4" placeholder="Décrivez votre événement..." required></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="event-date">Date et heure *</label>
+        <input type="datetime-local" id="event-date" class="form-control" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="event-image">URL de l'image</label>
+        <input type="url" id="event-image" class="form-control" placeholder="https://example.com/image.jpg">
+      </div>
+      
+      <h3>Type d'événement</h3>
+      <div class="form-group">
+        <label>Format *</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="format" value="presentiel" checked> Présentiel
+          </label>
+          <label>
+            <input type="radio" name="format" value="en-ligne"> En ligne
+          </label>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="event-type">Catégorie *</label>
+        <select id="event-type" class="form-control" required>
+          <option value="">Sélectionner une catégorie</option>
+          <option value="conference">Conférence</option>
+          <option value="workshop">Workshop</option>
+          <option value="seminaire">Séminaire</option>
+          <option value="formation">Formation</option>
+          <option value="networking">Networking</option>
+        </select>
+      </div>
+      
+      <h3>Localisation</h3>
+      <div class="form-group">
+        <label for="event-address">Adresse *</label>
+        <input type="text" id="event-address" class="form-control" placeholder="Adresse complète" required>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="event-city">Ville *</label>
+          <input type="text" id="event-city" class="form-control" placeholder="Ville" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="event-country">Pays *</label>
+          <input type="text" id="event-country" class="form-control" placeholder="Pays" required>
+        </div>
+      </div>
+      
+      <h3>Tarification et participants</h3>
+      <div class="form-group">
+        <label>Type de tarification *</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="pricing" value="free" checked> Gratuit
+          </label>
+          <label>
+            <input type="radio" name="pricing" value="paid"> Payant
+          </label>
+        </div>
+      </div>
+      
+      <div class="form-group price-input hidden">
+        <label for="event-price">Prix *</label>
+        <input type="number" id="event-price" class="form-control" placeholder="0" min="0">
+      </div>
+      
+      <div class="form-group">
+        <label for="event-capacity">Nombre max de participants *</label>
+        <input type="number" id="event-capacity" class="form-control" placeholder="100" min="1" required>
+      </div>
+    </div>
+    `,
+    [
+      {
+        text: 'Annuler',
+        class: 'btn-outline',
+        onClick: hideModal
+      },
+      {
+        text: 'Créer l\'événement',
+        class: 'btn-primary',
+        onClick: handleCreateEvent
+      }
+    ]
+  );
+
+  // Setup price input visibility
+  const pricingInputs = document.querySelectorAll('input[name="pricing"]');
+  const priceInput = document.querySelector('.price-input');
+  
+  pricingInputs.forEach(input => {
+    input.addEventListener('change', () => {
+      if (input.value === 'paid') {
+        priceInput.classList.remove('hidden');
+      } else {
+        priceInput.classList.add('hidden');
+      }
+    });
+  });
+}
+
+// Handle create event form submission
+function handleCreateEvent() {
+  // Get form values
+  const title = document.getElementById('event-title').value;
+  const description = document.getElementById('event-description').value;
+  const date = document.getElementById('event-date').value;
+  const image = document.getElementById('event-image').value;
+  const format = document.querySelector('input[name="format"]:checked').value;
+  const type = document.getElementById('event-type').value;
+  const address = document.getElementById('event-address').value;
+  const city = document.getElementById('event-city').value;
+  const country = document.getElementById('event-country').value;
+  const pricing = document.querySelector('input[name="pricing"]:checked').value;
+  const price = pricing === 'paid' ? parseFloat(document.getElementById('event-price').value) : 0;
+  const capacity = parseInt(document.getElementById('event-capacity').value);
+
+  // Validate required fields
+  if (!title || !description || !date || !type || !address || !city || !country || !capacity) {
+    showAlert('Veuillez remplir tous les champs obligatoires', 'error');
+    return;
+  }
+
+  // In a real app, this would send data to a backend
+  const newEvent = {
+    id: Date.now(),
+    title,
+    description,
+    date,
+    image: image || getRandomPlaceholderImage(),
+    type,
+    format,
+    location: {
+      address,
+      city,
+      country
+    },
+    price,
+    organizer: {
+      name: getCurrentUser().name,
+      logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(getCurrentUser().name)}&background=0D8ABC&color=fff`
+    },
+    participants: 0,
+    rating: {
+      score: 0,
+      count: 0
+    }
+  };
+
+  // Add event to data
+  EVENTS_DATA.unshift(newEvent);
+
+  // Hide modal and show success message
+  hideModal();
+  showAlert('Événement créé avec succès !', 'success');
+
+  // Refresh events display
+  renderFeaturedEvents();
 }

@@ -26,10 +26,34 @@ document.addEventListener('DOMContentLoaded', () => {
   
   createEventButton?.addEventListener('click', (e) => {
     e.preventDefault();
-    if (!isLoggedIn()) {
-      showLoginModal();
-      return;
-    }
     showCreateEventModal();
   });
+
+  // Setup search functionality
+  const searchInput = document.getElementById('search-input');
+  const searchButton = document.getElementById('search-button');
+
+  if (searchInput && searchButton) {
+    searchButton.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (query) {
+        const filters = {
+          query: query
+        };
+        renderFeaturedEvents(filters);
+      }
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = searchInput.value.trim();
+        if (query) {
+          const filters = {
+            query: query
+          };
+          renderFeaturedEvents(filters);
+        }
+      }
+    });
+  }
 });
